@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CinéPass - Réservation de cinéma</title>
+<style>
+:root{--primary:#6c4df6;--dark:#171526;--muted:#74718a;--bg:#f6f5fb;--green:#159957}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--dark)}
+header{background:linear-gradient(135deg,#171526,#4b329b);color:white;padding:20px 7%;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:25px;font-weight:bold}.logo span{color:#cfc5ff}
+nav button,.secondary{background:transparent;border:1px solid #ffffff88;color:inherit;border-radius:22px;padding:9px 15px;cursor:pointer}
+main{max-width:1200px;margin:auto;padding:25px 18px}
+.hero{background:linear-gradient(110deg,#fff,#ece7ff);border-radius:24px;padding:30px;margin-bottom:25px}
+.hero h1{font-size:clamp(28px,5vw,48px);margin:10px 0}.hero p{color:var(--muted);line-height:1.6;max-width:650px}
+.tag{display:inline-block;background:#eee9ff;color:#5c3ee7;padding:5px 9px;border-radius:15px;font-size:12px;font-weight:bold}
+.primary{border:0;background:var(--primary);color:white;padding:12px 17px;border-radius:10px;font-weight:bold;cursor:pointer}
+.filters,.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0}
+input,select{width:100%;padding:12px;border:1px solid #ddd8ef;border-radius:10px;background:white;font-size:14px}
+.movies{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.movie{background:white;border-radius:18px;overflow:hidden;box-shadow:0 5px 18px #29204412}
+.poster{height:260px;width:100%;object-fit:cover;display:block;background:#31245d}
+.movie-content{padding:16px}.movie-content h3{margin:10px 0}.movie-content p{color:var(--muted);font-size:14px}
+.movie-content .primary{width:100%;margin-top:8px}
+.panel{background:white;border-radius:20px;padding:24px;margin-top:25px;box-shadow:0 5px 18px #29204412}
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}.step{padding:8px 12px;border-radius:18px;background:#eeeafa;color:var(--primary);font-size:13px}.step.active{background:var(--primary);color:white}
+.screen{background:#252039;color:white;text-align:center;padding:12px;border-radius:50% 50% 8px 8px;margin:25px auto;max-width:480px}
+.seats{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;max-width:520px;margin:auto}
+.seat{border:0;border-radius:7px;background:#e5e1f2;color:#39334e;padding:9px 0;font-size:12px;cursor:pointer}
+.seat.selected{background:var(--primary);color:white}.seat.booked{background:#c9c6d1;color:white}
+.legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:13px;margin:18px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px}
+.summary{background:#f5f2ff;border-radius:14px;padding:16px;margin-top:20px;line-height:2}
+.payment-options{display:grid;gap:10px;margin:15px 0}
+.payment-option{border:1px solid #ddd8ef;padding:15px;border-radius:12px;background:white;text-align:left;font-size:15px;cursor:pointer}
+.payment-option.selected{border:2px solid var(--primary);background:#f5f2ff}.payment-option input{width:auto}
+.demo-note{background:#fff8e6;color:#775600;border:1px solid #f1d58a;padding:13px;border-radius:10px;font-size:13px;line-height:1.5}
+.confirm{border-left:5px solid var(--green);background:#effaf3;padding:18px;border-radius:10px;margin-top:20px}.confirm h3{color:var(--green)}
+.hidden{display:none!important}footer{text-align:center;color:var(--muted);padding:35px 10px;font-size:13px}
+@media(max-width:600px){header{padding:18px}.hero{padding:22px}.seats{gap:5px}.seat{font-size:10px;padding:8px 0}.poster{height:220px}}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">🎬 Ciné<span>Pass</span></div>
+<nav><button onclick="retourAccueil()">Accueil</button></nav>
+</header>
+
+<main>
+<section class="hero">
+<span class="tag">RÉSERVATION EN LIGNE</span>
+<h1>Votre cinéma, votre expérience.</h1>
+<p>Découvrez les films, choisissez votre séance, sélectionnez vos sièges et recevez votre confirmation. Tout en français.</p>
+<button class="primary" onclick="allerAuxFilms()">Voir les films</button>
+</section>
+
+<section id="films">
+<h2>🎬 Films à l'affiche</h2>
+<div class="filters">
+<input id="recherche" placeholder="Rechercher un film..." oninput="afficherFilms()">
+<select id="genre" onchange="afficherFilms()">
+<option value="">Tous les genres</option><option>Action</option><option>Animation</option><option>Science-fiction</option><option>Comédie</option>
+</select>
+<select id="langue" onchange="afficherFilms()">
+<option value="">Toutes les langues</option><option>Français</option><option>Anglais</option>
+</select>
+</div>
+<div class="movies" id="listeFilms"></div>
+</section>
+
+<section id="reservation" class="panel hidden">
+<h2>🎟️ Réserver votre séance</h2>
+<div class="steps"><span class="step active">1. Séance</span><span class="step active">2. Sièges</span><span class="step">3. Paiement</span><span class="step">4. Confirmation</span></div>
+<div class="row">
+<div><label>Film</label><input id="filmChoisi" readonly></div>
+<div><label>Date</label><select id="dateChoisie"><option>Samedi 26 septembre</option><option>Dimanche 27 septembre</option><option>Lundi 28 septembre</option></select></div>
+<div><label>Heure</label><select id="heureChoisie"><option>10:00</option><option>14:00</option><option>17:30</option><option>20:30</option></select></div>
+<div><label>Nombre de billets</label><select id="nombreBillets" onchange="changerNombreBillets()"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></div>
+</div>
+<h3>Choisissez vos sièges</h3>
+<div class="screen">ÉCRAN</div>
+<div class="seats" id="sieges"></div>
+<div class="legend">
+<span><i class="dot" style="background:#e5e1f2"></i>Disponible</span>
+<span><i class="dot" style="background:#6c4df6"></i>Sélectionné</span>
+<span><i class="dot" style="background:#c9c6d1"></i>Réservé</span>
+</div>
+<div class="summary"><b>Sièges :</b> <span id="resumeSieges">Aucun siège sélectionné</span><br><b>Prix par billet :</b> 8,00 €<br><b>Total :</b> <span id="prix">0,00 €</span></div>
+<br><button class="primary" onclick="allerPaiement()">Continuer vers le paiement</button>
+<button class="secondary" style="color:#171526" onclick="retourAccueil()">Annuler</button>
+</section>
+
+<section id="paiement" class="panel hidden">
+<h2>💳 Paiement</h2>
+<div class="steps"><span class="step active">1. Séance</span><span class="step active">2. Sièges</span><span class="step active">3. Paiement</span><span class="step">4. Confirmation</span></div>
+<div class="demo-note">🔒 <b>Mode démonstration sécurisé</b><br>Ce paiement est fictif pour votre projet PBL. Aucune transaction réelle n'est effectuée. N'entrez jamais de vraie information bancaire.</div>
+<h3>Choisissez votre moyen de paiement</h3>
+<div class="payment-options">
+<button class="payment-option" onclick="choisirPaiement('Carte bancaire',this)">💳 Carte bancaire (démo)</button>
+<button class="payment-option" onclick="choisirPaiement('PayPal',this)">🅿️ PayPal (démo)</button>
+<button class="payment-option" onclick="choisirPaiement('Google Pay',this)">📱 Google Pay (démo)</button>
+<button class="payment-option" onclick="choisirPaiement('Paiement au cinéma',this)">🎫 Paiement au cinéma (démo)</button>
+</div>
+<div class="summary"><b>Film :</b> <span id="paiementFilm"></span><br><b>Sièges :</b> <span id="paiementSieges"></span><br><b>Total :</b> <span id="paiementPrix"></span><br><b>Moyen :</b> <span id="paiementMethode">Non sélectionné</span></div>
+<br><button class="primary" onclick="confirmerPaiement()">🔒 Payer (simulation)</button>
+<button class="secondary" style="color:#171526" onclick="retourReservation()">Retour</button>
+</section>
+
+<section id="confirmation" class="panel hidden">
+<h2>📋 Confirmation</h2>
+<div class="steps"><span class="step active">1. Séance</span><span class="step active">2. Sièges</span><span class="step active">3. Paiement</span><span class="step active">4. Confirmation</span></div>
+<div id="formulaireConfirmation">
+<h3>Vos informations</h3>
+<div class="row">
+<div><label>Nom complet</label><input id="nom" placeholder="Votre nom"></div>
+<div><label>Adresse e-mail (facultatif)</label><input id="email" type="email" placeholder="exemple@email.com"></div>
+</div><br>
+<button class="primary" onclick="confirmerReservation()">Confirmer la réservation</button>
+</div>
+<div id="messageConfirmation"></div>
+</section>
+</main>
+
+<footer>© 2026 CinéPass — Prototype éducatif pour un projet PBL. Aucune transaction réelle.</footer>
+
+<script>
+const films=[
+{id:1,titre:"Le Voyage Étoilé",genre:"Science-fiction",langue:"Français",duree:"2h 05",image:"https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=600&auto=format&fit=crop"},
+{id:2,titre:"Le Monde des Rêves",genre:"Animation",langue:"Français",duree:"1h 40",image:"https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop"},
+{id:3,titre:"Mission Horizon",genre:"Action",langue:"Anglais",duree:"2h 15",image:"https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=600&auto=format&fit=crop"},
+{id:4,titre:"Un Jour à Paris",genre:"Comédie",langue:"Français",duree:"1h 50",image:"https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&auto=format&fit=crop"}];
+
+let filmActuel=null,selection=[],prixUnitaire=8,methodePaiement="";
+const siegesReserves=["A3","A4","B5","C2","D7","E1","F6","G4","H8"];
+
+function afficherFilms(){
+const recherche=document.getElementById("recherche").value.toLowerCase(),genre=document.getElementById("genre").value,langue=document.getElementById("langue").value;
+const liste=films.filter(f=>f.titre.toLowerCase().includes(recherche)&&(!genre||f.genre===genre)&&(!langue||f.langue===langue));
+document.getElementById("listeFilms").innerHTML=liste.map(f=>`<article class="movie"><img class="poster" src="${f.image}" alt="Affiche ${f.titre}"><div class="movie-content"><span class="tag">${f.genre}</span><h3>${f.titre}</h3><p>🎞️ ${f.langue}<br>⏱️ ${f.duree}</p><button class="primary" onclick="choisirFilm(${f.id})">Réserver</button></div></article>`).join("")||"<p>Aucun film trouvé.</p>";
+}
+function allerAuxFilms(){document.getElementById("films").scrollIntoView({behavior:"smooth"});}
+function choisirFilm(id){filmActuel=films.find(f=>f.id===id);selection=[];document.getElementById("filmChoisi").value=filmActuel.titre;document.getElementById("reservation").classList.remove("hidden");document.getElementById("paiement").classList.add("hidden");document.getElementById("confirmation").classList.add("hidden");afficherSieges();mettreAJourPrix();document.getElementById("reservation").scrollIntoView({behavior:"smooth"});}
+function afficherSieges(){const cont=document.getElementById("sieges");cont.innerHTML="";for(let r=0;r<8;r++){for(let c=1;c<=8;c++){const code=String.fromCharCode(65+r)+c,btn=document.createElement("button");btn.textContent=code;btn.className="seat";if(siegesReserves.includes(code)){btn.classList.add("booked");btn.disabled=true}else{btn.onclick=()=>basculerSiege(code,btn)}cont.appendChild(btn)}}}
+function basculerSiege(code,btn){const max=Number(document.getElementById("nombreBillets").value);if(selection.includes(code)){selection=selection.filter(s=>s!==code);btn.classList.remove("selected")}else if(selection.length<max){selection.push(code);btn.classList.add("selected")}else alert("Vous avez atteint le nombre de billets choisi.");mettreAJourPrix();}
+function changerNombreBillets(){const max=Number(document.getElementById("nombreBillets").value);if(selection.length>max)selection=selection.slice(0,max);afficherSieges();selection.forEach(code=>{[...document.querySelectorAll(".seat")].find(b=>b.textContent===code)?.classList.add("selected")});mettreAJourPrix();}
+function mettreAJourPrix(){document.getElementById("prix").textContent=(selection.length*prixUnitaire).toFixed(2).replace(".",",")+" €";document.getElementById("resumeSieges").textContent=selection.length?selection.join(", "):"Aucun siège sélectionné";}
+function allerPaiement(){const n=Number(document.getElementById("nombreBillets").value);if(selection.length!==n){alert("Veuillez sélectionner exactement "+n+" siège(s).");return}document.getElementById("paiementFilm").textContent=filmActuel.titre;document.getElementById("paiementSieges").textContent=selection.join(", ");document.getElementById("paiementPrix").textContent=(selection.length*prixUnitaire).toFixed(2).replace(".",",")+" €";document.getElementById("paiementMethode").textContent="Non sélectionné";methodePaiement="";document.querySelectorAll(".payment-option").forEach(x=>x.classList.remove("selected"));document.getElementById("reservation").classList.add("hidden");document.getElementById("paiement").classList.remove("hidden");document.getElementById("paiement").scrollIntoView({behavior:"smooth"});}
+function choisirPaiement(methode,bouton){methodePaiement=methode;document.querySelectorAll(".payment-option").forEach(x=>x.classList.remove("selected"));bouton.classList.add("selected");document.getElementById("paiementMethode").textContent=methode;}
+function confirmerPaiement(){if(!methodePaiement){alert("Veuillez choisir un moyen de paiement.");return}document.getElementById("paiement").classList.add("hidden");document.getElementById("confirmation").classList.remove("hidden");document.getElementById("confirmation").scrollIntoView({behavior:"smooth"});}
+function confirmerReservation(){const nom=document.getElementById("nom").value.trim(),email=document.getElementById("email").value.trim();if(!nom){alert("Veuillez entrer votre nom.");return}if(email&&!email.includes("@")){alert("Veuillez entrer une adresse e-mail valide.");return}const code="CP-"+Math.random().toString(36).substring(2,8).toUpperCase();document.getElementById("formulaireConfirmation").classList.add("hidden");document.getElementById("messageConfirmation").innerHTML=`<div class="confirm"><h3>✅ Réservation confirmée !</h3><p>Merci, ${nom}.</p><p><b>Film :</b> ${filmActuel.titre}<br><b>Date :</b> ${document.getElementById("dateChoisie").value}<br><b>Heure :</b> ${document.getElementById("heureChoisie").value}<br><b>Sièges :</b> ${selection.join(", ")}<br><b>Total :</b> ${(selection.length*prixUnitaire).toFixed(2).replace(".",",")} €<br><b>Paiement :</b> ${methodePaiement}<br><b>Code :</b> ${code}</p><p>🎟️ Démonstration terminée. Aucun paiement réel n'a été effectué.</p><button class="primary" onclick="retourAccueil()">Retour à l'accueil</button></div>`;}
+function retourReservation(){document.getElementById("paiement").classList.add("hidden");document.getElementById("reservation").classList.remove("hidden");document.getElementById("reservation").scrollIntoView({behavior:"smooth"});}
+function retourAccueil(){document.getElementById("reservation").classList.add("hidden");document.getElementById("paiement").classList.add("hidden");document.getElementById("confirmation").classList.add("hidden");window.scrollTo({top:0,behavior:"smooth"});}
+afficherFilms();
+</script>
+</body>
+</html>
